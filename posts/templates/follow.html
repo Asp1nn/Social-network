@@ -1,9 +1,7 @@
 {% extends "base.html" %}
-{% block title %} Последние обновления {% endblock %}
-{% block header %}Последние обновления на сайте{% endblock %}
+{% block title %} Подписки {% endblock %}
+{% block header %} Список подписок {% endblock %}
 {% block content %}
-  {% load cache %}
-  {% cache 20 index_page page %}
     <div class="container">
     {% include "menu.html" %}
             <!-- Вывод ленты записей -->
@@ -15,5 +13,4 @@
         {% if page.has_other_pages %}
             {% include "paginator.html" with items=page paginator=paginator%}
         {% endif %}
-  {% endcache %}
 {% endblock %}

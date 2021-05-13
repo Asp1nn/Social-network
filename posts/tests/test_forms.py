@@ -16,6 +16,14 @@ USER_NAME = 'Asp1n'
 POST_TEXT = 'Тестовая запись'
 HOME_URL = reverse('posts:index')
 NEW_POST_URL = reverse('posts:new_post')
+SMALL_GIF = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
 
 
 class PostFormTest(TestCase):
@@ -24,17 +32,9 @@ class PostFormTest(TestCase):
         super().setUpClass()
         settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         cls.user = User.objects.create(username=USER_NAME)
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
-            content=small_gif,
+            content=SMALL_GIF,
             content_type='image/gif'
         )
         cls.group = Group.objects.create(
@@ -78,10 +78,8 @@ class PostFormTest(TestCase):
         new_post_id = list(set(posts_new_id) - set(posts_id))
         self.assertEqual(len(new_post_id), 1)
         post = Post.objects.get(id=new_post_id[0])
-        print(form_data['image'])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.text, form_data['text'])
-        # self.assertEqual(post.image, form_data['image'])
         self.assertEqual(post.author, self.user)
         self.assertRedirects(response_1, HOME_URL)
         self.assertEqual(Post.objects.count(), post_count + 1)
