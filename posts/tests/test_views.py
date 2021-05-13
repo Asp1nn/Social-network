@@ -1,0 +1,150 @@
+import shutil
+import tempfile
+
+from django.conf import settings
+from django.core.cache import cache
+from django.core.cache.utils import make_template_fragment_key
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, Client
+from django.urls import reverse
+
+from posts import setting
+from posts.models import Group, Post, User
+
+
+GROUP_TITLE = 'Новое сообщество'
+GROUP_SLUG = 'test_group'
+GROUP_TEXT = 'description'
+USER_NAME = 'Asp1n'
+POST_TEXT = 'Тестовая запись'
+HOME_URL = reverse('posts:index')
+NEW_POST_URL = reverse('posts:new_post')
+GROUP_URL = reverse('posts:group_posts', kwargs={'slug': GROUP_SLUG})
+PROFILE_URL = reverse('posts:profile', kwargs={'username': USER_NAME})
+REDIRECT_URL = reverse('login') + '?next='
+
+
+class PostViewsTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+        cls.user = User.objects.create(username=USER_NAME)
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        cls.uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
+        cls.group = Group.objects.create(
+            title=GROUP_TITLE,
+            slug=GROUP_SLUG,
+            description=GROUP_TEXT
+        )
+        cls.test_group = Group.objects.create(
+            title='new_group',
+            slug='new_group')
+        cls.GROUP_URL_2 = reverse(
+            'posts:group_posts', kwargs={'slug': cls.test_group.slug})
+        cls.post = Post.objects.create(
+            text=POST_TEXT,
+            author=cls.user,
+            group=cls.group,
+            image=cls.uploaded,
+        )
+        cls.POST_URL = reverse(
+            'posts:post',
+            kwargs={'username': cls.user, 'post_id': cls.post.id})
+        cls.POST_EDIT_URL = reverse(
+            'posts:post_edit',
+            kwargs={'username': cls.user, 'post_id': cls.post.id})
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+
+    def test_pages_show_correct_context(self):
+        items = [
+            [HOME_URL, 'page'],
+            [PROFILE_URL, 'page'],
+            [GROUP_URL, 'page'],
+            [self.POST_URL, 'post']
+        ]
+        for url, context in items:
+            with self.subTest(url=url):
+                response = self.authorized_client.get(url)
+                if context != 'post':
+                    self.assertEqual(len(response.context[context]), 1)
+                    post = response.context[context][0]
+                else:
+                    post = response.context[context]
+                self.assertEqual(post.text, self.post.text)
+                self.assertEqual(post.author, self.post.author)
+                self.assertEqual(post.group.id, self.post.group.id)
+                self.assertEqual(post.image, self.post.image)
+
+    def test_group_page_show_correct_context(self):
+        response = self.authorized_client.get(GROUP_URL)
+        group = response.context['group']
+        self.assertEqual(group.title, self.group.title)
+        self.assertEqual(group.slug, self.group.slug)
+        self.assertEqual(group.description, self.group.description)
+
+    def test_new_post_in_the_wrong_group(self):
+        self.assertNotIn(
+            self.post,
+            self.authorized_client.get(self.GROUP_URL_2).context['page'])
+
+    def test_cache(self):
+        form_data = {
+            'text': 'text_cache',
+            'group': self.test_group.id
+        }
+        response = self.authorized_client.post(
+            NEW_POST_URL,
+            data=form_data,
+            follow=True
+        )
+        self.assertRedirects(response, HOME_URL)
+        key = make_template_fragment_key('index_page')
+        self.assertIsNotNone(cache.get(key))
+
+
+class PaginatorViewsTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create(username='name')
+        cls.client = Client()
+        cls.post_count_three = 3
+        cls.check_post_count = setting.POST_COUNT + cls.post_count_three
+        for _ in range(cls.check_post_count):
+            cls.post = Post.objects.create(
+                text='Тестовая запись',
+                author=cls.user)
+
+    def test_first_page_contains_no_more_than_ten_records(self):
+        response = self.client.get(HOME_URL)
+        self.assertEqual(
+            len(response.context.get('page')),
+            setting.POST_COUNT
+        )
+
+    def test_second_page_contains_three_records(self):
+        response = self.client.get(HOME_URL + '?page=2')
+        self.assertEqual(
+            len(response.context.get('page')),
+            self.post_count_three
+        )
