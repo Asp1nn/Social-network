@@ -120,9 +120,9 @@ class PostViewsTest(TestCase):
             self.authorized_client.get(self.GROUP_URL_2).context['page'])
 
     def test_cache(self):
-        self.authorized_client.get('posts:index')
+        self.authorized_client.get(reverse('posts:index'))
         key = make_template_fragment_key('index_page')
-        self.assertIsNotNone(cache.get(key, 1))
+        self.assertIsNotNone(cache.get(key))
 
     def test_following_and_unfollowing(self):
         chek_follower = Follow.objects.count()
