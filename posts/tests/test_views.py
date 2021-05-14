@@ -2,7 +2,7 @@ import shutil
 import tempfile
 
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.core.cache.utils import make_template_fragment_key
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
@@ -118,10 +118,18 @@ class PostViewsTest(TestCase):
             self.post,
             self.authorized_client.get(self.GROUP_URL_2).context['page'])
 
-    def test_cache(self):
-        self.authorized_client.get(reverse('posts:index'))
-        key = make_template_fragment_key('index_page')
-        self.assertIsNotNone(cache.get(key))
+    def test_cache_page_index(self):
+        response_1 = self.guest_client.get(reverse('posts:index'))
+        Post.objects.create(
+            text='Заголовок',
+            author_id=self.user.pk,
+            group_id=self.group.pk,
+        )
+        self.assertEqual(
+           self.guest_client.get(reverse('posts:index')).content, response_1.content)
+        caches['default'].clear()
+        response_2 = self.guest_client.get(reverse('posts:index'))
+        self.assertNotEqual(response_2.content, response_1.content)
 
     def test_following_and_unfollowing(self):
         chek_follower = Follow.objects.count()
