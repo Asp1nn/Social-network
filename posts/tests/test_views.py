@@ -3,12 +3,11 @@ import tempfile
 
 from django.conf import settings
 from django.core.cache import cache, caches
-from django.core.cache.utils import make_template_fragment_key
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from posts import setting
+from posts.settings import POST_COUNT_TEN
 from posts.models import Group, Post, User, Follow
 
 
@@ -169,7 +168,7 @@ class PaginatorViewsTest(TestCase):
         cls.user = User.objects.create(username='name')
         cls.client = Client()
         cls.post_count_three = 3
-        cls.check_post_count = setting.POST_COUNT + cls.post_count_three
+        cls.check_post_count = POST_COUNT_TEN + cls.post_count_three
         for _ in range(cls.check_post_count):
             cls.post = Post.objects.create(
                 text='Тестовая запись',
@@ -179,7 +178,7 @@ class PaginatorViewsTest(TestCase):
         response = self.client.get(HOME_URL)
         self.assertEqual(
             len(response.context.get('page')),
-            setting.POST_COUNT
+            POST_COUNT_TEN
         )
 
     def test_second_page_contains_three_records(self):

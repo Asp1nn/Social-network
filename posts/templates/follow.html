@@ -3,7 +3,7 @@
 {% block header %} Список подписок {% endblock %}
 {% block content %}
     <div class="container">
-    {% include "menu.html" %}
+    {% include "menu.html" with follow=True %}
             <!-- Вывод ленты записей -->
                 {% for post in page %}
                     {% include "post_item.html" with post=post %}

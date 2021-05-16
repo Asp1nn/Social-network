@@ -14,8 +14,7 @@ class Group(models.Model):
         verbose_name='Уникальныей ключ',
         unique=True,
         max_length=50,
-        help_text=('Укажите адрес для страницы группы. Используйте только '
-                   'латиницу, цифры, дефисы и знаки подчёркивания')
+        help_text='Укажите адрес для страницы группы.'
     )
     description = models.TextField(
         verbose_name='Описание',
@@ -74,6 +73,7 @@ class Post(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
+        verbose_name='Пост',
         on_delete=models.CASCADE,
         related_name="comments"
     )
@@ -93,6 +93,7 @@ class Comment(models.Model):
     )
 
     class Meta:
+        verbose_name = 'Комментарии'
         ordering = ('-created',)
 
 
@@ -111,4 +112,5 @@ class Follow(models.Model):
     )
 
     class Meta:
-        unique_together = ('user', 'author')
+        verbose_name = 'Подписки'
+        models.UniqueConstraint = ('user', 'author',)
