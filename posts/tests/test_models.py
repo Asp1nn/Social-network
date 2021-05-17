@@ -12,7 +12,7 @@ class PostModelTest(TestCase):
         )
 
     def test_verbose_name(self):
-        post = PostModelTest.post
+        post = Post()
         field_verboses = {
             'text': 'Запись',
             'author': 'Автор',
@@ -26,7 +26,7 @@ class PostModelTest(TestCase):
                 )
 
     def test_help_text(self):
-        post = PostModelTest.post
+        post = Post()
         field_help_text = {
             'text': 'Содержание записи',
         }
@@ -54,7 +54,7 @@ class GroupModelTest(TestCase):
         cls.group = Group.objects.create()
 
     def test_verbose_name(self):
-        group = GroupModelTest.group
+        group = Group()
         field_verboses = {
             'title': 'Название группы',
             'slug': 'Уникальныей ключ',
@@ -67,11 +67,10 @@ class GroupModelTest(TestCase):
                 )
 
     def test_help_text(self):
-        group = GroupModelTest.group
+        group = Group()
         field_help_text = {
             'title': 'Дайте короткое название группы',
-            'slug': ('Укажите адрес для страницы группы. Используйте только '
-                     'латиницу, цифры, дефисы и знаки подчёркивания')
+            'slug': 'Укажите адрес для страницы группы.'
         }
         for value, expected in field_help_text.items():
             with self.subTest(value=value):

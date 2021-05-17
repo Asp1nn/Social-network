@@ -10,10 +10,13 @@ GROUP_SLUG = 'test_group'
 USER_NAME = 'Asp1n'
 HOME_URL = reverse('posts:index')
 NEW_POST_URL = reverse('posts:new_post')
-GROUP_URL = reverse('posts:group_posts', kwargs={'slug': GROUP_SLUG})
-PROFILE_URL = reverse('posts:profile', kwargs={'username': USER_NAME})
+GROUP_URL = reverse('posts:group_posts', args=(GROUP_SLUG,))
+PROFILE_URL = reverse('posts:profile', args=(USER_NAME,))
+FOLLOW = reverse('posts:follow_index')
+FOLLOWING = reverse('posts:profile_follow', args=(USER_NAME,))
+UNFOLLOWING = reverse('posts:profile_unfollow', args=(USER_NAME,))
 REDIRECT_URL = reverse('login') + '?next='
-ERROR404 = 'not_found'
+ERROR404 = '/not_found/'
 
 
 class PostURLTest(TestCase):
@@ -36,13 +39,14 @@ class PostURLTest(TestCase):
         cls.POST_EDIT_URL = reverse(
             'posts:post_edit',
             kwargs={'username': cls.user, 'post_id': cls.post.id})
-
-    def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.not_author = Client()
-        self.authorized_client.force_login(self.user)
-        self.not_author.force_login(self.user_2)
+        cls.COMMENT_URL = reverse(
+            'posts:add_comment',
+            kwargs={'username': cls.user, 'post_id': cls.post.id})
+        cls.guest_client = Client()
+        cls.authorized_client = Client()
+        cls.not_author = Client()
+        cls.authorized_client.force_login(cls.user)
+        cls.not_author.force_login(cls.user_2)
 
     def test_accesses_url(self):
         urls_names = [
@@ -56,10 +60,21 @@ class PostURLTest(TestCase):
             [REDIRECT_URL + self.POST_EDIT_URL,
              self.guest_client,
              HTTPStatus.OK],
+            [REDIRECT_URL + self.COMMENT_URL,
+             self.guest_client,
+             HTTPStatus.OK],
+            [REDIRECT_URL + FOLLOWING,
+             self.guest_client,
+             HTTPStatus.OK],
+            [REDIRECT_URL + UNFOLLOWING,
+             self.guest_client,
+             HTTPStatus.OK],
             [NEW_POST_URL, self.guest_client, HTTPStatus.FOUND],
             [self.POST_EDIT_URL, self.guest_client, HTTPStatus.FOUND],
             [self.POST_EDIT_URL, self.not_author, HTTPStatus.FOUND],
             [NEW_POST_URL, self.authorized_client, HTTPStatus.OK],
+            [self.COMMENT_URL, self.authorized_client, HTTPStatus.OK],
+            [FOLLOW, self.authorized_client, HTTPStatus.OK],
             [self.POST_EDIT_URL, self.authorized_client, HTTPStatus.OK],
             [ERROR404, self.guest_client, HTTPStatus.NOT_FOUND]
         ]
@@ -76,7 +91,12 @@ class PostURLTest(TestCase):
             [NEW_POST_URL,
              guest,
              (REDIRECT_URL + NEW_POST_URL)],
-            [self.POST_EDIT_URL, self.not_author, self.POST_URL]
+            [self.POST_EDIT_URL, self.not_author, self.POST_URL],
+            [self.COMMENT_URL,
+             guest,
+             REDIRECT_URL + self.COMMENT_URL],
+            [FOLLOWING, guest, REDIRECT_URL + FOLLOWING],
+            [UNFOLLOWING, guest, REDIRECT_URL + UNFOLLOWING],
         ]
         for url, client, redirected in urls_names:
             with self.subTest(url=url):
@@ -89,7 +109,8 @@ class PostURLTest(TestCase):
             ['new.html', NEW_POST_URL],
             ['profile.html', PROFILE_URL],
             ['post.html', self.POST_URL],
-            ['new.html', self.POST_EDIT_URL]
+            ['new.html', self.POST_EDIT_URL],
+            ['follow.html', FOLLOW]
         ]
 
         for template, url in template_url_name:

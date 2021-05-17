@@ -23,8 +23,10 @@ GROUP_URL = reverse('posts:group_posts', kwargs={'slug': GROUP_SLUG})
 PROFILE_URL = reverse('posts:profile', kwargs={'username': USER_NAME})
 REDIRECT_URL = reverse('login') + '?next='
 FOLLOW = reverse('posts:follow_index')
-FOLLOWING = reverse('posts:profile_follow', args=(USER_NAME,))
-UNFOLLOWING = reverse('posts:profile_unfollow', args=(USER_NAME,))
+FOLLOWING_ON_USER = reverse('posts:profile_follow', args=(USER_NAME,))
+FOLLOWING_ON_USER_2 = reverse('posts:profile_follow', args=(USER_NAME_2,))
+UNFOLLOWING_ON_USER = reverse('posts:profile_unfollow', args=(USER_NAME,))
+UNFOLLOWING_ON_USER_2 = reverse('posts:profile_unfollow', args=(USER_NAME_2,))
 SMALL_GIF = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
     b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -71,6 +73,12 @@ class PostViewsTest(TestCase):
         cls.COMMENT = reverse(
             'posts:add_comment',
             kwargs={'username': cls.user, 'post_id': cls.post.id})
+        cls.guest_client = Client()
+        cls.authorized_client = Client()
+        cls.authorized_client_2 = Client()
+        cls.authorized_client.force_login(cls.user)
+        cls.authorized_client_2.force_login(cls.user_2)
+        cls.authorized_client_2.get(FOLLOWING_ON_USER)
 
     @classmethod
     def tearDownClass(cls):
@@ -78,11 +86,6 @@ class PostViewsTest(TestCase):
         super().tearDownClass()
 
     def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client_2 = Client()
-        self.authorized_client.force_login(self.user)
-        self.authorized_client_2.force_login(self.user_2)
         cache.clear()
 
     def test_pages_show_correct_context(self):
@@ -90,11 +93,12 @@ class PostViewsTest(TestCase):
             [HOME_URL, 'page'],
             [PROFILE_URL, 'page'],
             [GROUP_URL, 'page'],
+            [FOLLOW, 'page'],
             [self.POST_URL, 'post']
         ]
         for url, context in items:
             with self.subTest(url=url):
-                response = self.authorized_client.get(url)
+                response = self.authorized_client_2.get(url)
                 if context != 'post':
                     self.assertEqual(len(response.context[context]), 1)
                     post = response.context[context][0]
@@ -118,47 +122,41 @@ class PostViewsTest(TestCase):
             self.authorized_client.get(self.GROUP_URL_2).context['page'])
 
     def test_cache_page_index(self):
-        response_1 = self.guest_client.get(reverse('posts:index'))
+        response_1 = self.guest_client.get(HOME_URL)
         Post.objects.create(
             text='Заголовок',
             author_id=self.user.pk,
             group_id=self.group.pk,
         )
         self.assertEqual(
-           self.guest_client.get(reverse('posts:index')).content, response_1.content)
+           self.guest_client.get(HOME_URL).content, response_1.content)
         caches['default'].clear()
-        response_2 = self.guest_client.get(reverse('posts:index'))
+        response_2 = self.guest_client.get(HOME_URL)
         self.assertNotEqual(response_2.content, response_1.content)
 
-    def test_following_and_unfollowing(self):
-        chek_follower = Follow.objects.count()
-        self.authorized_client_2.get(FOLLOWING)
-        chek_follower_2 = Follow.objects.count()
-        self.assertEqual(chek_follower_2, chek_follower + 1)
-        self.authorized_client_2.get(UNFOLLOWING)
-        chek_follower_3 = Follow.objects.count()
-        self.assertEqual(chek_follower_3, chek_follower)
-
-    def test_new_post_appears_for_subscribers(self):
-        self.authorized_client_2.get(FOLLOWING)
-        form_data = {
-            'text': 'new_post',
-        }
-        response = self.authorized_client.post(
-            NEW_POST_URL,
-            data=form_data,
-            follow=True
+    def test_unfollowing(self):
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user_2,
+                author=self.user).exists()
         )
-        self.assertIn(
-            response.context['post'],
-            self.authorized_client_2.get(FOLLOW).context['page'])
-        self.assertNotIn(
-            response.context['post'],
-            self.authorized_client.get(FOLLOW).context['page'])
+        self.authorized_client_2.get(UNFOLLOWING_ON_USER)
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.user_2,
+                author=self.user).exists()
+        )
 
-    def test_only_auth_user_can_comment_post(self):
-        self.assertRedirects(
-            self.guest_client.get(self.COMMENT), REDIRECT_URL + self.COMMENT)
+    def test_following(self):
+        self.authorized_client.get(FOLLOWING_ON_USER_2)
+        follow = Follow.objects.get(user=self.user, author=self.user_2)
+        self.assertEqual(follow.user, self.user)
+        self.assertEqual(follow.author, self.user_2)
+
+    def test_post_do_not_appears_for_not_a_subscribers(self):
+        self.assertNotIn(
+            self.post,
+            self.authorized_client.get(FOLLOW).context['page'])
 
 
 class PaginatorViewsTest(TestCase):

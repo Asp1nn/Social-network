@@ -34,7 +34,10 @@ def group_posts(request, slug):
 
 @login_required
 def new_post(request):
-    form = PostForm(request.POST or None)
+    form = PostForm(
+        request.POST or None,
+        request.FILES or None,
+    )
     if not form.is_valid():
         return render(request, "new.html", {
             "form": form,
@@ -121,14 +124,14 @@ def profile_follow(request, username):
     if (request.user != user and not Follow.objects.filter(
             user=request.user, author=user).exists()):
         Follow.objects.create(user=request.user, author=user)
-        return redirect(request.path_info)
+        return redirect(request.META.get('HTTP_REFERER', request.path_info))
     return redirect('posts:follow_index')
 
 
 @login_required
 def profile_unfollow(request, username):
     get_object_or_404(Follow, user=request.user, author__username=username).delete()
-    return redirect('posts:profile', username=username)
+    return redirect(request.META.get('HTTP_REFERER', request.path_info))
 
 
 def page_not_found(request, exception):

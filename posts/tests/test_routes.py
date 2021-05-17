@@ -26,6 +26,21 @@ class RoutesTest(TestCase):
                 'posts:post_edit',
                 args=[author, post_id]),
              f'/{author}/{post_id}/edit/'],
+            [reverse(
+                'posts:follow_index'),
+                '/follow/'],
+            [reverse(
+                'posts:profile_follow',
+                args=[author]),
+             f'/{author}/follow/'],
+            [reverse(
+                'posts:profile_unfollow',
+                args=[author]),
+             f'/{author}/unfollow/'],
+            [reverse(
+                'posts:add_comment',
+                args=[author, post_id]),
+                f'/{author}/{post_id}/comment/']
         ]
         for url, route in urls_routes_names:
             self.assertEqual(url, route)
