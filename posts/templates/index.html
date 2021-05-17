@@ -4,7 +4,7 @@
 {% block content %}
   {% include "menu.html" with index=True%}
   {% load cache %}
-  {% cache 20 index_page page.number %}
+  {% cache 20 index_page page.number request.user %}
     <div class="container">
             <!-- Вывод ленты записей -->
                 {% for post in page %}
