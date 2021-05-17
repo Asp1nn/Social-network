@@ -129,7 +129,8 @@ class PostViewsTest(TestCase):
             group_id=self.group.pk,
         )
         self.assertEqual(
-           self.guest_client.get(HOME_URL).content, response_1.content)
+            self.guest_client.get(HOME_URL).content, response_1.content
+        )
         caches['default'].clear()
         response_2 = self.guest_client.get(HOME_URL)
         self.assertNotEqual(response_2.content, response_1.content)

@@ -141,7 +141,9 @@ class PostFormTest(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertRedirects(response_edit_post, REDIRECT_URL + self.POST_EDIT_URL)
+        self.assertRedirects(
+            response_edit_post, REDIRECT_URL + self.POST_EDIT_URL
+        )
 
     def test_add_comment(self):
         comment_count = Comment.objects.count()
