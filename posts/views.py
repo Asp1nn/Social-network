@@ -68,12 +68,15 @@ def post_view(request, username, post_id):
     form = CommentForm()
     following = request.user.is_authenticated and Follow.objects.filter(
         user=request.user, author=post.author).exists()
+    paginator = Paginator(post.comments.all(), POST_COUNT_FIVE)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
     return render(request, 'post.html', {
         'post': post,
         'author': post.author,
         'form': form,
-        'comments': post.comments.all(),
-        'following': following
+        'following': following,
+        'page': page,
     })
 
 
