@@ -16,7 +16,7 @@
   </div>
 {% endif %}
 <!-- Комментарии -->
-{% for item in page %}
+{% for item in comments %}
   <div class="media card mb-4">
     <div class="media-body card-body">
       <h5 class="mt-0">
@@ -30,6 +30,3 @@
     </div>
   </div>
 {% endfor %}
-{% if page.has_other_pages %}
-  {% include "paginator.html" with items=page paginator=paginator%}
-{% endif %}
