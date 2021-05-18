@@ -70,13 +70,13 @@ def post_view(request, username, post_id):
         user=request.user, author=post.author).exists()
     paginator = Paginator(post.comments.all(), POST_COUNT_FIVE)
     page_number = request.GET.get('page')
-    page = paginator.get_page(page_number)
+    comments = paginator.get_page(page_number)
     return render(request, 'post.html', {
         'post': post,
         'author': post.author,
         'form': form,
         'following': following,
-        'page': page,
+        'comments': comments,
     })
 
 
