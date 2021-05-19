@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from posts.settings import POST_COUNT_INDEX
+from posts.settings import NUMBER_POSTS
 from posts.models import Group, Post, User, Follow
 
 
@@ -66,13 +66,13 @@ class PostViewsTest(TestCase):
         )
         cls.POST_URL = reverse(
             'posts:post',
-            kwargs={'username': cls.user, 'post_id': cls.post.id})
+            kwargs={'username': cls.user.username, 'post_id': cls.post.id})
         cls.POST_EDIT_URL = reverse(
             'posts:post_edit',
-            kwargs={'username': cls.user, 'post_id': cls.post.id})
+            kwargs={'username': cls.user.username, 'post_id': cls.post.id})
         cls.COMMENT = reverse(
             'posts:add_comment',
-            kwargs={'username': cls.user, 'post_id': cls.post.id})
+            kwargs={'username': cls.user.username, 'post_id': cls.post.id})
         cls.guest_client = Client()
         cls.authorized_client = Client()
         cls.authorized_client_2 = Client()
@@ -166,23 +166,23 @@ class PaginatorViewsTest(TestCase):
         super().setUpClass()
         cls.user = User.objects.create(username='name')
         cls.client = Client()
-        cls.post_count_three = 3
-        cls.check_post_count = POST_COUNT_INDEX + cls.post_count_three
-        for _ in range(cls.check_post_count):
+        cls.post_count = 3
+        check_post_count = NUMBER_POSTS + cls.post_count
+        for _ in range(check_post_count):
             cls.post = Post.objects.create(
                 text='Тестовая запись',
                 author=cls.user)
 
-    def test_first_page_contains_no_more_than_ten_records(self):
+    def test_first_page_contains_quantity_records_posts(self):
         response = self.client.get(HOME_URL)
         self.assertEqual(
             len(response.context.get('page')),
-            POST_COUNT_INDEX
+            NUMBER_POSTS
         )
 
-    def test_second_page_contains_three_records(self):
+    def test_second_page_contains_quantity_records(self):
         response = self.client.get(HOME_URL + '?page=2')
         self.assertEqual(
             len(response.context.get('page')),
-            self.post_count_three
+            self.post_count
         )

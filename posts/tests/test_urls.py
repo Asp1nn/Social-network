@@ -12,13 +12,14 @@ HOME_URL = reverse('posts:index')
 NEW_POST_URL = reverse('posts:new_post')
 GROUP_URL = reverse('posts:group_posts', args=(GROUP_SLUG,))
 PROFILE_URL = reverse('posts:profile', args=(USER_NAME,))
-FOLLOW = reverse('posts:follow_index')
-FOLLOWING = reverse('posts:profile_follow', args=(USER_NAME,))
-UNFOLLOWING = reverse('posts:profile_unfollow', args=(USER_NAME,))
-REDIRECT_URL = reverse('login') + '?next='
-REDIRECT_NEW_POST = f'{REDIRECT_URL},{NEW_POST_URL}'
-REDIRECT_FOLLOWING = f'{REDIRECT_URL}, {FOLLOWING}'
-REDIRECT_UNFOLLOWING = f'{REDIRECT_URL}, {UNFOLLOWING}'
+FOLLOW_URL = reverse('posts:follow_index')
+FOLLOWING_URL = reverse('posts:profile_follow', args=(USER_NAME,))
+UNFOLLOWING_URL = reverse('posts:profile_unfollow', args=(USER_NAME,))
+
+LOGIN_URL = reverse('login')
+REDIRECT_NEW_POST_URL = f'{LOGIN_URL}?next={NEW_POST_URL}'
+REDIRECT_FOLLOWING_URL = f'{LOGIN_URL}?next={FOLLOWING_URL}'
+REDIRECT_UNFOLLOWING_URL = f'{LOGIN_URL}?next={UNFOLLOWING_URL}'
 ERROR404 = 'AJSFjasbf2i3h2930-1-=2rkamvlzxvnsjbf_ABSJBFAKS'
 FOUND = HTTPStatus.FOUND
 OK = HTTPStatus.OK
@@ -48,8 +49,8 @@ class PostURLTest(TestCase):
         cls.COMMENT_URL = reverse(
             'posts:add_comment',
             kwargs={'username': cls.user, 'post_id': cls.post.id})
-        cls.REDIRECT_POST_EDIT = f'{REDIRECT_URL},{cls.POST_EDIT_URL}'
-        cls.REDIRECT_COMMENT = f'{REDIRECT_URL}, {cls.COMMENT_URL}'
+        cls.REDIRECT_POST_EDIT = f'{LOGIN_URL}?next={cls.POST_EDIT_URL}'
+        cls.REDIRECT_COMMENT = f'{LOGIN_URL}?next={cls.COMMENT_URL}'
         cls.guest_client = Client()
         cls.authorized_client = Client()
         cls.not_author = Client()
@@ -65,17 +66,17 @@ class PostURLTest(TestCase):
             [GROUP_URL, guest, OK],
             [PROFILE_URL, guest, OK],
             [self.POST_URL, guest, OK],
-            [REDIRECT_NEW_POST, guest, OK],
+            [REDIRECT_NEW_POST_URL, guest, OK],
             [self.REDIRECT_POST_EDIT, guest, OK],
             [self.REDIRECT_COMMENT, guest, OK],
-            [REDIRECT_FOLLOWING, guest, OK],
-            [REDIRECT_UNFOLLOWING, guest, OK],
+            [REDIRECT_FOLLOWING_URL, guest, OK],
+            [REDIRECT_UNFOLLOWING_URL, guest, OK],
             [NEW_POST_URL, guest, FOUND],
             [self.POST_EDIT_URL, guest, FOUND],
             [self.POST_EDIT_URL, another, FOUND],
             [NEW_POST_URL, author, OK],
             [self.COMMENT_URL, author, FOUND],
-            [FOLLOW, author, OK],
+            [FOLLOW_URL, author, OK],
             [self.POST_EDIT_URL, author, OK],
             [ERROR404, guest, NOT_FOUND]
         ]
@@ -88,16 +89,16 @@ class PostURLTest(TestCase):
         urls_names = [
             [self.POST_EDIT_URL,
              guest,
-             (REDIRECT_URL + self.POST_EDIT_URL)],
+             self.REDIRECT_POST_EDIT],
             [NEW_POST_URL,
              guest,
-             (REDIRECT_URL + NEW_POST_URL)],
+             REDIRECT_NEW_POST_URL],
             [self.POST_EDIT_URL, self.not_author, self.POST_URL],
             [self.COMMENT_URL,
              guest,
-             REDIRECT_URL + self.COMMENT_URL],
-            [FOLLOWING, guest, REDIRECT_URL + FOLLOWING],
-            [UNFOLLOWING, guest, REDIRECT_URL + UNFOLLOWING],
+             self.REDIRECT_COMMENT],
+            [FOLLOWING_URL, guest, REDIRECT_FOLLOWING_URL],
+            [UNFOLLOWING_URL, guest, REDIRECT_UNFOLLOWING_URL],
         ]
         for url, client, redirected in urls_names:
             with self.subTest(url=url):
@@ -111,7 +112,7 @@ class PostURLTest(TestCase):
             ['profile.html', PROFILE_URL],
             ['post.html', self.POST_URL],
             ['new.html', self.POST_EDIT_URL],
-            ['follow.html', FOLLOW]
+            ['follow.html', FOLLOW_URL]
         ]
 
         for template, url in template_url_name:

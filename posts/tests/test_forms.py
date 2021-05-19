@@ -40,6 +40,7 @@ class PostFormTest(TestCase):
             content=SMALL_GIF,
             content_type='image/gif'
         )
+
         cls.group = Group.objects.create(
             title=GROUP_TITLE,
             slug=GROUP_SLUG,
@@ -47,16 +48,17 @@ class PostFormTest(TestCase):
         cls.post = Post.objects.create(
             text=POST_TEXT,
             author=cls.user,
+            group=cls.group,
         )
         cls.POST_URL = reverse(
             'posts:post',
-            kwargs={'username': cls.user, 'post_id': cls.post.id})
+            kwargs={'username': cls.user.username, 'post_id': cls.post.id})
         cls.POST_EDIT_URL = reverse(
             'posts:post_edit',
-            kwargs={'username': cls.user, 'post_id': cls.post.id})
+            kwargs={'username': cls.user.username, 'post_id': cls.post.id})
         cls.COMMENT_URL = reverse(
             'posts:add_comment',
-            kwargs={'username': cls.user, 'post_id': cls.post.id})
+            kwargs={'username': cls.user.username, 'post_id': cls.post.id})
 
     @classmethod
     def tearDownClass(cls):
@@ -77,11 +79,11 @@ class PostFormTest(TestCase):
             follow=True
         )
         posts_new_id = [post.id for post in response_post.context['page']]
-        new_post_id = list(set(posts_new_id) - set(posts_id))
+        post_id = list(set(posts_new_id) - set(posts_id))
         self.assertRedirects(response_post, HOME_URL)
-        self.assertEqual(len(new_post_id), 1)
+        self.assertEqual(len(post_id), 1)
         self.assertEqual(len(posts_new_id), post_count + 1)
-        post = Post.objects.get(pk=new_post_id[0])
+        post = response_post.context['page'].paginator.object_list[post_id[0]]
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.image.name, 'posts/' + form_data['image'].name)
@@ -137,9 +139,16 @@ class PostFormTest(TestCase):
         self.assertRedirects(response_new_post, REDIRECT_URL + NEW_POST_URL)
 
     def test_edit_post_guest_client(self):
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
+        new_group = Group.objects.create(title='new_group', slug='new_group')
         form_data = {
             'text': 'test_text',
-            'group': self.group.id
+            'group': new_group.id,
+            'image': uploaded
         }
         response_edit_post = self.guest_client.post(
             self.POST_EDIT_URL,
@@ -147,6 +156,9 @@ class PostFormTest(TestCase):
             follow=True
         )
         self.assertEqual(self.post.text, POST_TEXT)
+        self.assertEqual(self.post.group, self.group)
+        self.assertNotEqual(
+            self.post.image.name, 'posts/' + form_data['image'].name)
         self.assertRedirects(
             response_edit_post, REDIRECT_URL + self.POST_EDIT_URL
         )
@@ -162,6 +174,10 @@ class PostFormTest(TestCase):
         self.assertRedirects(response, self.POST_URL)
         self.assertEqual(Comment.objects.count(), comment_count + 1)
         self.assertEqual(
-            response.context['post'].comments.get(pk=1).text,
+            response.context['post'].comments.get(text='test_text').text,
             form_data['text']
+        )
+        self.assertEqual(
+            response.context['post'].comments.get(text='test_text').author,
+            self.user
         )
