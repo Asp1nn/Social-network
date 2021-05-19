@@ -8,7 +8,7 @@
     <div class="container">
             <!-- Вывод ленты записей -->
                 {% for post in page %}
-                    {% include "post_item.html" with post=post group_page=True %}
+                    {% include "post_item.html" with post=post %}
                 {% endfor %}
     </div>
         <!-- Вывод паджинатора -->

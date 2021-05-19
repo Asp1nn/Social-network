@@ -14,7 +14,7 @@ class Group(models.Model):
         verbose_name='Уникальныей ключ',
         unique=True,
         max_length=50,
-        help_text='Укажите адрес для страницы группы.'
+        help_text='Укажите уникальный ключ для страницы группы.'
     )
     description = models.TextField(
         verbose_name='Описание',
@@ -113,4 +113,8 @@ class Follow(models.Model):
 
     class Meta:
         verbose_name = 'Подписки'
-        models.UniqueConstraint = ('user', 'author',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'], name='unique_author_user_following'
+            )
+        ]

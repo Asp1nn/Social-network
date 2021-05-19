@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from posts.settings import POST_COUNT_TEN
+from posts.settings import POST_COUNT_INDEX
 from posts.models import Group, Post, User, Follow
 
 
@@ -78,7 +78,9 @@ class PostViewsTest(TestCase):
         cls.authorized_client_2 = Client()
         cls.authorized_client.force_login(cls.user)
         cls.authorized_client_2.force_login(cls.user_2)
-        cls.authorized_client_2.get(FOLLOWING_ON_USER)
+        Follow.objects.create(
+            user=cls.user_2,
+            author=cls.user)
 
     @classmethod
     def tearDownClass(cls):
@@ -123,11 +125,7 @@ class PostViewsTest(TestCase):
 
     def test_cache_page_index(self):
         response_1 = self.guest_client.get(HOME_URL)
-        Post.objects.create(
-            text='Заголовок',
-            author_id=self.user.pk,
-            group_id=self.group.pk,
-        )
+        Post.objects.all().delete()
         self.assertEqual(
             self.guest_client.get(HOME_URL).content, response_1.content
         )
@@ -150,9 +148,11 @@ class PostViewsTest(TestCase):
 
     def test_following(self):
         self.authorized_client.get(FOLLOWING_ON_USER_2)
-        follow = Follow.objects.get(user=self.user, author=self.user_2)
-        self.assertEqual(follow.user, self.user)
-        self.assertEqual(follow.author, self.user_2)
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user_2,
+                author=self.user).exists()
+        )
 
     def test_post_do_not_appears_for_not_a_subscribers(self):
         self.assertNotIn(
@@ -167,7 +167,7 @@ class PaginatorViewsTest(TestCase):
         cls.user = User.objects.create(username='name')
         cls.client = Client()
         cls.post_count_three = 3
-        cls.check_post_count = POST_COUNT_TEN + cls.post_count_three
+        cls.check_post_count = POST_COUNT_INDEX + cls.post_count_three
         for _ in range(cls.check_post_count):
             cls.post = Post.objects.create(
                 text='Тестовая запись',
@@ -177,7 +177,7 @@ class PaginatorViewsTest(TestCase):
         response = self.client.get(HOME_URL)
         self.assertEqual(
             len(response.context.get('page')),
-            POST_COUNT_TEN
+            POST_COUNT_INDEX
         )
 
     def test_second_page_contains_three_records(self):

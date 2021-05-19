@@ -76,17 +76,16 @@ class PostFormTest(TestCase):
             data=form_data,
             follow=True
         )
-        response_get = self.authorized_client.get(HOME_URL)
-        posts_new_id = [post.id for post in response_get.context['page']]
+        posts_new_id = [post.id for post in response_post.context['page']]
         new_post_id = list(set(posts_new_id) - set(posts_id))
         self.assertRedirects(response_post, HOME_URL)
         self.assertEqual(len(new_post_id), 1)
-        post = response_get.context['page'][0]
+        self.assertEqual(len(posts_new_id), post_count + 1)
+        post = Post.objects.get(pk=new_post_id[0])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.image.name, 'posts/' + form_data['image'].name)
         self.assertEqual(post.author, self.user)
-        self.assertEqual(len(posts_new_id), post_count + 1)
 
     def test_change_post(self):
         new_group = Group.objects.create(title='new_group', slug='new_group')
@@ -122,7 +121,7 @@ class PostFormTest(TestCase):
                     form_field = response.context['form'].fields[value]
                     self.assertIsInstance(form_field, expected)
 
-    def test_create_and_edit_post_guest_client(self):
+    def test_create_post_guest_client(self):
         post_count = Post.objects.count()
         form_data = {
             'text': 'test_text',
@@ -136,11 +135,18 @@ class PostFormTest(TestCase):
         new_post_count = Post.objects.count()
         self.assertEqual(post_count, new_post_count)
         self.assertRedirects(response_new_post, REDIRECT_URL + NEW_POST_URL)
+
+    def test_edit_post_guest_client(self):
+        form_data = {
+            'text': 'test_text',
+            'group': self.group.id
+        }
         response_edit_post = self.guest_client.post(
             self.POST_EDIT_URL,
             data=form_data,
             follow=True
         )
+        self.assertEqual(self.post.text, POST_TEXT)
         self.assertRedirects(
             response_edit_post, REDIRECT_URL + self.POST_EDIT_URL
         )
@@ -155,3 +161,7 @@ class PostFormTest(TestCase):
         )
         self.assertRedirects(response, self.POST_URL)
         self.assertEqual(Comment.objects.count(), comment_count + 1)
+        self.assertEqual(
+            response.context['post'].comments.get(pk=1).text,
+            form_data['text']
+        )

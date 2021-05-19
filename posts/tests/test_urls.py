@@ -16,7 +16,13 @@ FOLLOW = reverse('posts:follow_index')
 FOLLOWING = reverse('posts:profile_follow', args=(USER_NAME,))
 UNFOLLOWING = reverse('posts:profile_unfollow', args=(USER_NAME,))
 REDIRECT_URL = reverse('login') + '?next='
-ERROR404 = '/not_found/'
+REDIRECT_NEW_POST = f'{REDIRECT_URL},{NEW_POST_URL}'
+REDIRECT_FOLLOWING = f'{REDIRECT_URL}, {FOLLOWING}'
+REDIRECT_UNFOLLOWING = f'{REDIRECT_URL}, {UNFOLLOWING}'
+ERROR404 = 'AJSFjasbf2i3h2930-1-=2rkamvlzxvnsjbf_ABSJBFAKS'
+FOUND = HTTPStatus.FOUND
+OK = HTTPStatus.OK
+NOT_FOUND = HTTPStatus.NOT_FOUND
 
 
 class PostURLTest(TestCase):
@@ -42,6 +48,8 @@ class PostURLTest(TestCase):
         cls.COMMENT_URL = reverse(
             'posts:add_comment',
             kwargs={'username': cls.user, 'post_id': cls.post.id})
+        cls.REDIRECT_POST_EDIT = f'{REDIRECT_URL},{cls.POST_EDIT_URL}'
+        cls.REDIRECT_COMMENT = f'{REDIRECT_URL}, {cls.COMMENT_URL}'
         cls.guest_client = Client()
         cls.authorized_client = Client()
         cls.not_author = Client()
@@ -49,34 +57,27 @@ class PostURLTest(TestCase):
         cls.not_author.force_login(cls.user_2)
 
     def test_accesses_url(self):
+        guest = self.guest_client
+        author = self.authorized_client
+        another = self.not_author
         urls_names = [
-            [HOME_URL, self.guest_client, HTTPStatus.OK],
-            [GROUP_URL, self.guest_client, HTTPStatus.OK],
-            [PROFILE_URL, self.guest_client, HTTPStatus.OK],
-            [self.POST_URL, self.guest_client, HTTPStatus.OK],
-            [REDIRECT_URL + NEW_POST_URL,
-             self.guest_client,
-             HTTPStatus.OK],
-            [REDIRECT_URL + self.POST_EDIT_URL,
-             self.guest_client,
-             HTTPStatus.OK],
-            [REDIRECT_URL + self.COMMENT_URL,
-             self.guest_client,
-             HTTPStatus.OK],
-            [REDIRECT_URL + FOLLOWING,
-             self.guest_client,
-             HTTPStatus.OK],
-            [REDIRECT_URL + UNFOLLOWING,
-             self.guest_client,
-             HTTPStatus.OK],
-            [NEW_POST_URL, self.guest_client, HTTPStatus.FOUND],
-            [self.POST_EDIT_URL, self.guest_client, HTTPStatus.FOUND],
-            [self.POST_EDIT_URL, self.not_author, HTTPStatus.FOUND],
-            [NEW_POST_URL, self.authorized_client, HTTPStatus.OK],
-            [self.COMMENT_URL, self.authorized_client, HTTPStatus.OK],
-            [FOLLOW, self.authorized_client, HTTPStatus.OK],
-            [self.POST_EDIT_URL, self.authorized_client, HTTPStatus.OK],
-            [ERROR404, self.guest_client, HTTPStatus.NOT_FOUND]
+            [HOME_URL, guest, OK],
+            [GROUP_URL, guest, OK],
+            [PROFILE_URL, guest, OK],
+            [self.POST_URL, guest, OK],
+            [REDIRECT_NEW_POST, guest, OK],
+            [self.REDIRECT_POST_EDIT, guest, OK],
+            [self.REDIRECT_COMMENT, guest, OK],
+            [REDIRECT_FOLLOWING, guest, OK],
+            [REDIRECT_UNFOLLOWING, guest, OK],
+            [NEW_POST_URL, guest, FOUND],
+            [self.POST_EDIT_URL, guest, FOUND],
+            [self.POST_EDIT_URL, another, FOUND],
+            [NEW_POST_URL, author, OK],
+            [self.COMMENT_URL, author, FOUND],
+            [FOLLOW, author, OK],
+            [self.POST_EDIT_URL, author, OK],
+            [ERROR404, guest, NOT_FOUND]
         ]
         for url, user, code in urls_names:
             with self.subTest(url=url):
@@ -115,5 +116,5 @@ class PostURLTest(TestCase):
 
         for template, url in template_url_name:
             with self.subTest(url=url):
-                response = self.authorized_client.get(url)
-                self.assertTemplateUsed(response, template)
+                self.assertTemplateUsed(
+                    self.authorized_client.get(url), template)

@@ -14,12 +14,10 @@
       {{ post.text|linebreaksbr }}
     </p>
     <!-- Если пост относится к какому-нибудь сообществу, то отобразим ссылку на него через # -->
-    {% if group_page %}
-      {% if post.group %}
-        <a class="card-link muted" href="{% url 'posts:group_posts' post.group.slug %}">
-          <strong class="d-block text-gray-dark">#{{ post.group.title }}</strong>
-        </a>
-      {% endif %}
+    {% if post.group and not group_name %}
+      <a class="card-link muted" href="{% url 'posts:group_posts' post.group.slug %}">
+        <strong class="d-block text-gray-dark">#{{ post.group.title }}</strong>
+      </a>
     {% endif %}
     <!-- Отображение ссылки на комментарии -->
     <div class="d-flex justify-content-between align-items-center">
@@ -34,8 +32,8 @@
             Добавить комментарий
           </a>
         {% else %}
-          <a class="btn btn-lg btn-light" href="{% url 'login' %}" role="button">
-            Авторизуйтесь, чтобы оставить комментарий
+          <a class="btn btn-sm btn-primary" href="{% url 'posts:post' post.author.username post.id %}" role="button">
+            Посомтреть пост
           </a>
         {% endif %}
         <!-- Ссылка на редактирование поста для автора -->

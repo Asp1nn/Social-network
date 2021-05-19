@@ -12,7 +12,6 @@ class PostModelTest(TestCase):
         )
 
     def test_verbose_name(self):
-        post = Post()
         field_verboses = {
             'text': 'Запись',
             'author': 'Автор',
@@ -22,18 +21,17 @@ class PostModelTest(TestCase):
         for value, expected in field_verboses.items():
             with self.subTest(value=value):
                 self.assertEqual(
-                    post._meta.get_field(value).verbose_name, expected
+                    Post._meta.get_field(value).verbose_name, expected
                 )
 
     def test_help_text(self):
-        post = Post()
         field_help_text = {
             'text': 'Содержание записи',
         }
         for value, expected in field_help_text.items():
             with self.subTest(value=value):
                 self.assertEqual(
-                    post._meta.get_field(value).help_text, expected)
+                    Post._meta.get_field(value).help_text, expected)
 
     def test_len_post_text(self):
         post = PostModelTest.post
@@ -54,7 +52,6 @@ class GroupModelTest(TestCase):
         cls.group = Group.objects.create()
 
     def test_verbose_name(self):
-        group = Group()
         field_verboses = {
             'title': 'Название группы',
             'slug': 'Уникальныей ключ',
@@ -63,19 +60,18 @@ class GroupModelTest(TestCase):
         for value, expected in field_verboses.items():
             with self.subTest(value=value):
                 self.assertEqual(
-                    group._meta.get_field(value).verbose_name, expected
+                    Group._meta.get_field(value).verbose_name, expected
                 )
 
     def test_help_text(self):
-        group = Group()
         field_help_text = {
             'title': 'Дайте короткое название группы',
-            'slug': 'Укажите адрес для страницы группы.'
+            'slug': 'Укажите уникальный ключ для страницы группы.'
         }
         for value, expected in field_help_text.items():
             with self.subTest(value=value):
                 self.assertEqual(
-                    group._meta.get_field(value).help_text, expected)
+                    Group._meta.get_field(value).help_text, expected)
 
     def test_object_name_is_title_field(self):
         group = GroupModelTest.group
