@@ -83,7 +83,7 @@ class PostFormTest(TestCase):
         self.assertRedirects(response_post, HOME_URL)
         self.assertEqual(len(post_id), 1)
         self.assertEqual(len(posts_new_id), post_count + 1)
-        post = response_post.context['page'].paginator.object_list[post_id[0]]
+        post = response_post.context['page'][post_id == post_id[0]]
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.image.name, 'posts/' + form_data['image'].name)
