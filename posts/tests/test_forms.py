@@ -86,7 +86,8 @@ class PostFormTest(TestCase):
             if post.id == post_id:
                 self.assertEqual(post.group.id, form_data['group'])
                 self.assertEqual(post.text, form_data['text'])
-                self.assertEqual(post.image.name, 'posts/' + form_data['image'].name)
+                self.assertEqual(
+                    post.image.name, 'posts/' + form_data['image'].name)
                 self.assertEqual(post.author, self.user)
         self.assertEqual(len(posts_new_id), post_count + 1)
 
