@@ -82,12 +82,13 @@ class PostFormTest(TestCase):
         post_id = list(set(posts_new_id) - set(posts_id))
         self.assertRedirects(response_post, HOME_URL)
         self.assertEqual(len(post_id), 1)
+        for post in response_post.context['page']:
+            if post.id == post_id:
+                self.assertEqual(post.group.id, form_data['group'])
+                self.assertEqual(post.text, form_data['text'])
+                self.assertEqual(post.image.name, 'posts/' + form_data['image'].name)
+                self.assertEqual(post.author, self.user)
         self.assertEqual(len(posts_new_id), post_count + 1)
-        post = response_post.context['page'][post_id == post_id[0]]
-        self.assertEqual(post.group.id, form_data['group'])
-        self.assertEqual(post.text, form_data['text'])
-        self.assertEqual(post.image.name, 'posts/' + form_data['image'].name)
-        self.assertEqual(post.author, self.user)
 
     def test_change_post(self):
         new_group = Group.objects.create(title='new_group', slug='new_group')
