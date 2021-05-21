@@ -40,6 +40,11 @@ class PostFormTest(TestCase):
             content=SMALL_GIF,
             content_type='image/gif'
         )
+        cls.new_uploaded = SimpleUploadedFile(
+            name='new_small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
 
         cls.group = Group.objects.create(
             title=GROUP_TITLE,
@@ -49,6 +54,7 @@ class PostFormTest(TestCase):
             text=POST_TEXT,
             author=cls.user,
             group=cls.group,
+            image=cls.new_uploaded
         )
         cls.POST_URL = reverse(
             'posts:post',
@@ -160,7 +166,8 @@ class PostFormTest(TestCase):
         )
         self.assertEqual(self.post.text, POST_TEXT)
         self.assertEqual(self.post.group, self.group)
-        self.assertIsNone(self.post.image.name)
+        self.assertEqual(
+            self.post.image.name, 'posts/' + self.new_uploaded.name)
         self.assertEqual(self.post.author, self.user)
         self.assertRedirects(
             response_edit_post, REDIRECT_URL + self.POST_EDIT_URL
@@ -168,15 +175,21 @@ class PostFormTest(TestCase):
 
     def test_add_comment(self):
         comment_count = Comment.objects.count()
+        comments_id = [comment.id for comment in Comment.objects.all()]
         form_data = {'text': 'test_text'}
         response = self.authorized_client.post(
             self.COMMENT_URL,
             data=form_data,
             follow=True
         )
+        all_comments = response.context['post'].comments.all()
+        new_comments_id = [comment.id for comment in all_comments]
+        list_comments_id = list(set(new_comments_id) - set(comments_id))
         self.assertRedirects(response, self.POST_URL)
         self.assertEqual(Comment.objects.count(), comment_count + 1)
-        query = response.context['post'].comments.get(post=self.post)
-        self.assertEqual(query.text, form_data['text'])
-        self.assertEqual(query.author, self.user)
-        self.assertEqual(response.context['post'], self.post)
+        comment = [
+            comment for comment in all_comments
+            if comment.id == list_comments_id[0]][0]
+        self.assertEqual(comment.text, form_data['text'])
+        self.assertEqual(comment.author, self.user)
+        self.assertIn(comment, all_comments)
