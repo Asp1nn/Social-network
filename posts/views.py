@@ -52,10 +52,10 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     following = (
-            request.user.is_authenticated and
-            request.user != author and
-            Follow.objects.filter(
-                user=request.user, author=author).exists())
+        request.user.is_authenticated
+        and request.user != author
+        and Follow.objects.filter(
+            user=request.user, author=author).exists())
     paginator = Paginator(posts, PROFILE_POSTS_NUMBER)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
@@ -70,10 +70,10 @@ def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
     form = CommentForm()
     following = (
-            request.user.is_authenticated and
-            request.user != post.author and
-            Follow.objects.filter(
-                user=request.user, author=post.author).exists())
+        request.user.is_authenticated
+        and request.user != post.author
+        and Follow.objects.filter(
+            user=request.user, author=post.author).exists())
     return render(request, 'post.html', {
         'post': post,
         'author': post.author,
