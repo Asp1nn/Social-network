@@ -79,16 +79,17 @@ class PostFormTest(TestCase):
             follow=True
         )
         posts_new_id = [post.id for post in response_post.context['page']]
-        post_id = list(set(posts_new_id) - set(posts_id))
+        list_post_id = list(set(posts_new_id) - set(posts_id))
         self.assertRedirects(response_post, HOME_URL)
-        self.assertEqual(len(post_id), 1)
-        for post in response_post.context['page']:
-            if post.id == post_id:
-                self.assertEqual(post.group.id, form_data['group'])
-                self.assertEqual(post.text, form_data['text'])
-                self.assertEqual(
-                    post.image.name, 'posts/' + form_data['image'].name)
-                self.assertEqual(post.author, self.user)
+        self.assertEqual(len(list_post_id), 1)
+        post = [
+            post for post in response_post.context['page']
+            if post.id == list_post_id[0]][0]
+        self.assertEqual(post.group.id, form_data['group'])
+        self.assertEqual(post.text, form_data['text'])
+        self.assertEqual(
+            post.image.name, 'posts/' + form_data['image'].name)
+        self.assertEqual(post.author, self.user)
         self.assertEqual(len(posts_new_id), post_count + 1)
 
     def test_change_post(self):
@@ -159,8 +160,8 @@ class PostFormTest(TestCase):
         )
         self.assertEqual(self.post.text, POST_TEXT)
         self.assertEqual(self.post.group, self.group)
-        self.assertNotEqual(
-            self.post.image.name, 'posts/' + form_data['image'].name)
+        self.assertIsNone(self.post.image.name)
+        self.assertEqual(self.post.author, self.user)
         self.assertRedirects(
             response_edit_post, REDIRECT_URL + self.POST_EDIT_URL
         )
@@ -175,11 +176,7 @@ class PostFormTest(TestCase):
         )
         self.assertRedirects(response, self.POST_URL)
         self.assertEqual(Comment.objects.count(), comment_count + 1)
-        self.assertEqual(
-            response.context['post'].comments.get(text='test_text').text,
-            form_data['text']
-        )
-        self.assertEqual(
-            response.context['post'].comments.get(text='test_text').author,
-            self.user
-        )
+        query = response.context['post'].comments.get(post=self.post)
+        self.assertEqual(query.text, form_data['text'])
+        self.assertEqual(query.author, self.user)
+        self.assertEqual(response.context['post'], self.post)

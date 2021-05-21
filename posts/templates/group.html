@@ -4,7 +4,7 @@
 {% block content %}
   <p>{{ group.description|linebreaksbr }}</p>
   {% for post in page %}
-    {% include "post_item.html" with post=post show_group_name=True %}
+    {% include "post_item.html" with post=post hide_the_group_name=True %}
   {% endfor %}
   {% if page.has_other_pages %}
     {% include "paginator.html" with items=page paginator=paginator%}

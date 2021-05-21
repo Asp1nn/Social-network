@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from posts.settings import NUMBER_POSTS
+from posts.settings import POSTS_NUMBER
 from posts.models import Group, Post, User, Follow
 
 
@@ -167,7 +167,7 @@ class PaginatorViewsTest(TestCase):
         cls.user = User.objects.create(username='name')
         cls.client = Client()
         cls.post_count = 3
-        check_post_count = NUMBER_POSTS + cls.post_count
+        check_post_count = POSTS_NUMBER + cls.post_count
         for _ in range(check_post_count):
             cls.post = Post.objects.create(
                 text='Тестовая запись',
@@ -177,7 +177,7 @@ class PaginatorViewsTest(TestCase):
         response = self.client.get(HOME_URL)
         self.assertEqual(
             len(response.context.get('page')),
-            NUMBER_POSTS
+            POSTS_NUMBER
         )
 
     def test_second_page_contains_quantity_records(self):

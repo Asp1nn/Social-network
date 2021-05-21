@@ -20,7 +20,7 @@ LOGIN_URL = reverse('login')
 REDIRECT_NEW_POST_URL = f'{LOGIN_URL}?next={NEW_POST_URL}'
 REDIRECT_FOLLOWING_URL = f'{LOGIN_URL}?next={FOLLOWING_URL}'
 REDIRECT_UNFOLLOWING_URL = f'{LOGIN_URL}?next={UNFOLLOWING_URL}'
-ERROR404 = '/%%$%$%$%/'  # Недопустимые симолы для создания формы
+ERROR404 = '/%/%/$/%/$/%/$/%/'
 FOUND = HTTPStatus.FOUND
 OK = HTTPStatus.OK
 NOT_FOUND = HTTPStatus.NOT_FOUND
